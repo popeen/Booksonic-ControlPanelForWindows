@@ -15,15 +15,27 @@ namespace BooksonicControlPanel
     public partial class MainWindow : Window
     {
         private System.Diagnostics.Process pProcess = new System.Diagnostics.Process();
+        private System.Windows.Forms.NotifyIcon notifyIcon;
+        private WindowState m_storedWindowState = WindowState.Normal;
+        private String exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+
         private String portNum = "4040";
         private String installLocation = @"C:\booksonic";
 
         public MainWindow()
         {
             InitializeComponent();
+            notifyIcon = new System.Windows.Forms.NotifyIcon
+            {
+                BalloonTipText = "Booksonic has been minimised. Click the tray icon to show.",
+                BalloonTipTitle = "Booksonic Control Panel",
+                Text = "Booksonic Control Panel",
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath)
+            };
+            notifyIcon.Click += new EventHandler(trayIconClick);
         }
 
-
+        
         protected override void OnClosing(CancelEventArgs e)
         {
 
@@ -51,7 +63,40 @@ namespace BooksonicControlPanel
                 }
             }
 
+            notifyIcon.Dispose();
+            notifyIcon = null;
             base.OnClosing(e);
+        }
+
+        void OnStateChanged(object sender, EventArgs args)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                Hide();
+                if (notifyIcon != null)
+                {
+                    notifyIcon.ShowBalloonTip(2000);
+
+                }
+            }
+            else
+            {
+                m_storedWindowState = WindowState;
+            }
+        }
+
+        void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
+        {
+            if (notifyIcon != null)
+            {
+                notifyIcon.Visible = !IsVisible;
+            }
+        }
+
+        void trayIconClick(object sender, EventArgs e)
+        {
+            Show();
+            WindowState = m_storedWindowState;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BooksonicControlPanel"
         mc:Ignorable="d"
-        Title="Booksonic Control Panel" Height="272.536" Width="318.311" ResizeMode="CanMinimize" Icon="booksonic.png">
+        Title="Booksonic Control Panel" Height="272.536" Width="318.311" ResizeMode="CanMinimize" Icon="booksonic.png" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="101*"/>
