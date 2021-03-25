@@ -9,6 +9,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Windows.Media;
+using System.ServiceProcess;
+using System.ComponentModel;
 
 namespace BooksonicControlPanel
 {
@@ -18,13 +20,18 @@ namespace BooksonicControlPanel
         private System.Windows.Forms.NotifyIcon notifyIcon;
         private WindowState m_storedWindowState = WindowState.Normal;
         private String exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+        private readonly BackgroundWorker worker = new BackgroundWorker();
 
         private String portNum = "4040";
         private String installLocation = @"C:\booksonic";
 
+
         public MainWindow()
         {
             InitializeComponent();
+
+            worker.DoWork += worker_DoWork;
+
             notifyIcon = new System.Windows.Forms.NotifyIcon
             {
                 BalloonTipText = "Booksonic has been minimised. Click the tray icon to show.",
@@ -33,36 +40,62 @@ namespace BooksonicControlPanel
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath)
             };
             notifyIcon.Click += new EventHandler(trayIconClick);
+            
+            worker.RunWorkerAsync();
         }
-
-        
-        protected override void OnClosing(CancelEventArgs e)
+        private void worker_DoWork(object sender, DoWorkEventArgs e)
         {
-
-
-            //If the server is running ask if we really want to close
-            if (processIsRunning(pProcess))
+            ServiceController sc = new ServiceController("Booksonic");
+            String statusStr;
+            Boolean startBtnEnabled, stopBtnEnabled;
+            while (true)
             {
-
-                MessageBoxResult shutdownWarningMessageBox = MessageBox.Show(
-                    "If you close this window Booksonic will be shut down. Do you want to continue?",
-                    "Closing Booksonic",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning
-                );
-
-                switch (shutdownWarningMessageBox)
+                System.Threading.Thread.Sleep(2000);
+                sc.Refresh();
+                switch (sc.Status)
                 {
-                    case MessageBoxResult.Yes:
-                        stopBooksonic();
+                    case ServiceControllerStatus.Running:
+                        statusStr = "Running";
+                        startBtnEnabled = false;
+                        stopBtnEnabled = true;
                         break;
-
+                    case ServiceControllerStatus.Stopped:
+                        statusStr = "Stopped";
+                        startBtnEnabled = true;
+                        stopBtnEnabled = false;
+                        break;
+                    case ServiceControllerStatus.Paused:
+                        statusStr = "Paused";
+                        startBtnEnabled = true;
+                        stopBtnEnabled = true;
+                        break;
+                    case ServiceControllerStatus.StopPending:
+                        statusStr = "Stopping";
+                        startBtnEnabled = false;
+                        stopBtnEnabled = false;
+                        break;
+                    case ServiceControllerStatus.StartPending:
+                        statusStr = "Starting";
+                        startBtnEnabled = false;
+                        stopBtnEnabled = false;
+                        break;
                     default:
-                        e.Cancel = true;
+                        statusStr = "Status Changing";
+                        startBtnEnabled = false;
+                        stopBtnEnabled = false;
                         break;
                 }
+                Dispatcher.Invoke(() =>
+                {
+                    status.Content = statusStr;
+                    startBtn.IsEnabled = startBtnEnabled;
+                    stopBtn.IsEnabled = stopBtnEnabled;
+                });
             }
+        }
 
+        protected override void OnClosing(CancelEventArgs e)
+        {
             notifyIcon.Dispose();
             notifyIcon = null;
             base.OnClosing(e);
@@ -103,168 +136,11 @@ namespace BooksonicControlPanel
         {
             if ( sender == startBtn)
             {
-                Dispatcher.Invoke(new Action(() =>
-                {
-                    installLocation = path.Text;
-                    bool shouldStartServer = true;
-
-                    //If the path is invalid dont start
-                    if(shouldStartServer && !IsValidPath(installLocation))
-                    {
-                        MessageBox.Show(
-                            "The path you have entered is not a valid path. Please fix it and try again.",
-                            "Invalid path",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning
-                        );
-                        shouldStartServer = false;
-
-                    }
-
-                    //If java is not installed we ask used to download it first
-                    if (shouldStartServer && !javaInstalled())
-                    {
-                        installJava("Booksonic requires Java to run.\nDo you want to install the latest JRE from AdoptOpenJDK?");
-
-                        if (!javaInstalled()) { 
-                            MessageBox.Show(
-                            "Booksonic Control Panel still can't find java on your computer.\n" +
-                            "If you did install it restart the control panel.\n" +
-                            "If you didn't install it please do so.\n\n" +
-                            "If you get this message when starting the control panel from the downloads in your browser, please go to your download folder in windows instead and start it from there.",
-                            "Java problem",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error
-                            );
-                            shouldStartServer = false;
-                        }
-                    }
-
-                    //Don't start if the selected port is already in use
-                    bool invalidPort = false;
-                    int parsedPort;
-                    try
-                    {
-                        parsedPort = int.Parse(port.Text);
-                        if (parsedPort > 65353 || parsedPort < 0)
-                        {
-                            invalidPort = true;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        invalidPort = true;
-                        parsedPort = 4040;
-                    }
-
-                    if (shouldStartServer && invalidPort)
-                    {
-                        MessageBox.Show(
-                            "The port you have entered is invalid. Please use a number between 0 and 65535.",
-                            "Invalid port",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning
-                        );
-                        shouldStartServer = false;
-                    }
-
-                    //Don't start if the selected port is already in use
-                    if (shouldStartServer && PortInUse(parsedPort))
-                    {
-                        MessageBox.Show(
-                            "The selected port is already in use on this computer, select another port or close the application using the port",
-                            "Port already in use",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning
-                        );
-                        shouldStartServer = false;
-                    }
-
-                    
-                    //Start the server
-                    if (shouldStartServer)
-                    {
-                        portNum = port.Text;
-
-                        WebClient webClient = new System.Net.WebClient();
-                        webClient.Headers.Add("user-agent", "BooksonicControlPanel");
-                        String json = webClient.DownloadString("https://api.github.com/repos/popeen/Booksonic-Air/releases");
-                        Console.WriteLine(json);
-                        JArray jsonArray = JArray.Parse(json);
-                        var jsonObjects = jsonArray.OfType<JObject>().ToList();
-                        string newestVersion = (string)jsonObjects[0]["tag_name"];
-                        string currentVersion;
-                        if (!Directory.Exists(installLocation))
-                        {
-                            Directory.CreateDirectory(installLocation);
-                        }
-                        if (File.Exists(installLocation + @"\version"))
-                        {
-                            currentVersion = File.ReadAllText(installLocation + @"\version");
-                        }
-                        else
-                        {
-                            currentVersion = "";
-                        }
-                        string warUrl = (string)jsonObjects[0]["assets"][0]["browser_download_url"];
-                        Console.WriteLine("Newest:" + newestVersion + "\nCurrent: " + currentVersion);
-
-
-
-                        //If a new version is available ask if we want to download it before starting
-                        if (!String.Equals(newestVersion, currentVersion) && !String.Equals(currentVersion, ""))
-                        {
-
-                            MessageBoxResult updateAvailableMessageBox = MessageBox.Show(
-                                "There is a new update available, do you want to download it before starting?",
-                                "Update Available",
-                                MessageBoxButton.YesNo,
-                                MessageBoxImage.Information
-                            );
-
-                            switch (updateAvailableMessageBox)
-                            {
-                                case MessageBoxResult.Yes:
-                                    downloadBooksonic(warUrl, newestVersion);
-                                    break;
-                            }
-
-                        }
-                        //If this is the first run, inform that booksonic files will be downloaded
-                        else if (String.Equals(currentVersion, ""))
-                        {
-
-                            MessageBoxResult firstRunDownloadMessageBox = MessageBox.Show(
-                                "Before Booksonic can be started the server files need to be downloaded. This will be done automatically and then the server will start",
-                                "Downloading Booksonic",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information
-                            );
-
-                            switch (firstRunDownloadMessageBox)
-                            {
-                                default:
-                                    downloadBooksonic(warUrl, newestVersion);
-                                    break;
-                            }
-
-                        }
-                        startBooksonic();
-
-                        status.Content = "Running";
-                        startBtn.IsEnabled = false;
-                        stopBtn.IsEnabled = true;
-                    }
-                }), DispatcherPriority.Background);
+                (new ServiceController("Booksonic")).Start();
             }
             else if (sender == stopBtn)
             {
-                Dispatcher.Invoke(new Action(() => {
-                    stopBooksonic();
-                    status.Content = "Not Running";
-                    startBtn.IsEnabled = true;
-                    stopBtn.IsEnabled = false;
-                }), DispatcherPriority.ContextIdle);
+                (new ServiceController("Booksonic")).Stop();
             }
             else if (sender == devBtn)
             {
@@ -274,25 +150,6 @@ namespace BooksonicControlPanel
                 }), DispatcherPriority.ContextIdle);
             }
 
-        }
-
-        public void startBooksonic()
-        {
-            pProcess.StartInfo.FileName = @"java";
-            pProcess.StartInfo.Arguments = @"-Dairsonic.home=" + installLocation + @" -Dserver.port=" + portNum + " -jar booksonic.war";
-            pProcess.StartInfo.UseShellExecute = false;
-            pProcess.StartInfo.CreateNoWindow = true;
-            pProcess.StartInfo.WorkingDirectory = installLocation + @"\";
-            pProcess.Start();
-        }
-
-        public void stopBooksonic()
-        {
-            //TODO, this should be done more gracefully
-            if (processIsRunning(pProcess))
-            {
-                pProcess.Kill();
-            }
         }
 
         public void downloadBooksonic(string warUrl, string version)
