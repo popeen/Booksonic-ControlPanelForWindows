@@ -11,6 +11,7 @@ using System.Net.NetworkInformation;
 using System.Windows.Media;
 using System.ServiceProcess;
 using System.ComponentModel;
+using System.Security.Principal;
 
 namespace BooksonicControlPanel
 {
@@ -30,7 +31,12 @@ namespace BooksonicControlPanel
         {
             InitializeComponent();
 
-            worker.DoWork += worker_DoWork;
+            if (IsAdministrator() == false)
+            {
+                System.Windows.Forms.MessageBox.Show("The control panel needs to run as administrator so it can handle the Booksonic service. \n\nPlease rightlick on the exe and then run as administrator", "Admin rights needed", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
+                System.Windows.Application.Current.Shutdown();
+            }
+
 
             notifyIcon = new System.Windows.Forms.NotifyIcon
             {
@@ -40,7 +46,8 @@ namespace BooksonicControlPanel
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath)
             };
             notifyIcon.Click += new EventHandler(trayIconClick);
-            
+
+            worker.DoWork += worker_DoWork;
             worker.RunWorkerAsync();
         }
         private void worker_DoWork(object sender, DoWorkEventArgs e)
@@ -92,6 +99,13 @@ namespace BooksonicControlPanel
                     stopBtn.IsEnabled = stopBtnEnabled;
                 });
             }
+        }
+
+        private static bool IsAdministrator()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
         protected override void OnClosing(CancelEventArgs e)
