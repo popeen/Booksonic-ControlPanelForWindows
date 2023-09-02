@@ -13,6 +13,7 @@ using System.ServiceProcess;
 using System.Net.Http;
 using System.Security.Policy;
 using System.Security.Principal;
+using Microsoft.Win32.TaskScheduler;
 
 namespace BooksonicControlPanel
 {
@@ -25,11 +26,12 @@ namespace BooksonicControlPanel
 
         private String portNum = "4040";
         private String installLocation = @"C:\booksonic";
+        private String nssmPath = "";
 
         public MainWindow()
         {
             InitializeComponent();
-
+            nssmPath = installLocation + @"\booksonic-nssm.exe";
             if (IsAdministrator() == false)
             {
                 System.Windows.Forms.MessageBox.Show("The control panel needs to run as administrator so it can handle the Booksonic service. \n\nPlease rightlick on the exe and then run as administrator", "Admin rights needed", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
@@ -115,16 +117,12 @@ namespace BooksonicControlPanel
             {
                 using (WebClient client = new WebClient())
                 {
-                    // Download a small piece of content from the website (e.g., homepage)
                     string content = client.DownloadString("http://localhost:" + portNum + "/ ");
-
-                    // If the download succeeds, the website is up
                     return true;
                 }
             }
             catch (WebException)
             {
-                // A WebException occurred, indicating that the website is not reachable
                 return false;
             }
         }
@@ -142,12 +140,11 @@ namespace BooksonicControlPanel
 
         }
 
-
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
             if ( sender == startBtn)
             {
-                Dispatcher.Invoke(new Action(() =>
+                Dispatcher.Invoke(new System.Action(() =>
                 {
                     installLocation = path.Text;
                     bool shouldStartServer = true;
@@ -278,7 +275,7 @@ namespace BooksonicControlPanel
                                         status.Content = "Downloading...";
                                         startBtn.IsEnabled = false;
                                     });
-                                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+                                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new System.Action(() => { }));
 
                                     downloadBooksonic(warUrl, newestVersion);
                                     break;
@@ -319,7 +316,7 @@ namespace BooksonicControlPanel
                                 status.Content = "Starting service...";
                                 startBtn.IsEnabled = false;
                             });
-                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new System.Action(() => { }));
 
                             startService();
                             //startBooksonic();
@@ -337,7 +334,7 @@ namespace BooksonicControlPanel
                                 status.Content = "Starting service...";
                                 startBtn.IsEnabled = false;
                             });
-                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new System.Action(() => { }));
 
                             startService();
                             //startBooksonic();
@@ -352,7 +349,7 @@ namespace BooksonicControlPanel
             }
             else if (sender == stopBtn)
             {
-                Dispatcher.Invoke(new Action(() => {
+                Dispatcher.Invoke(new System.Action(() => {
                     status.Content = "Stopping service";
                     stopService();
                     status.Content = "Not Running";
@@ -362,7 +359,7 @@ namespace BooksonicControlPanel
             }
             else if (sender == devBtn)
             {
-                Dispatcher.Invoke(new Action(() => {
+                Dispatcher.Invoke(new System.Action(() => {
                     Console.WriteLine("Dev button pressed");
                     installJava();
                 }), DispatcherPriority.ContextIdle);
@@ -391,7 +388,7 @@ namespace BooksonicControlPanel
 
         public void downloadNSSM()
         {
-            String nssmPath = installLocation + @"\booksonic-nssm.exe";
+            
             Console.WriteLine("Downloading NSSM");
             if (false == File.Exists(nssmPath))
             {
@@ -403,6 +400,11 @@ namespace BooksonicControlPanel
 
         public void installService()
         {
+
+            // Remove the scheduled task created by the old installation script
+            RemoveScheduledTask("Booksonic start on boot");
+
+
             ProcessStartInfo processInfo = new ProcessStartInfo(installLocation + @"\booksonic-nssm.exe");
             processInfo.Arguments = $"install Booksonic \"java\" \"-Dairsonic.home=" + installLocation + " -Dserver.port=" + portNum + " -jar " + installLocation + "\\booksonic.war\"";
             processInfo.RedirectStandardOutput = true;
@@ -416,7 +418,35 @@ namespace BooksonicControlPanel
             process.WaitForExit();
 
         }
+        public bool RemoveScheduledTask(string taskName)
+        {
+            using (TaskService taskService = new TaskService())
+            {
+                try
+                {
+                    // Get the task by its name
+                    Task task = taskService.GetTask(taskName);
 
+                    if (task != null)
+                    {
+                        // Delete the task
+                        taskService.RootFolder.DeleteTask(taskName);
+                        return true;
+                    }
+                    else
+                    {
+                        // Task not found
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle any exceptions (e.g., access denied, task not found, etc.)
+                    Console.WriteLine($"Error removing task: {ex.Message}");
+                    return false;
+                }
+            }
+        }
         public void downloadBooksonic(string warUrl, string version)
         {
             Console.WriteLine("Downloading the latest version of the server");
@@ -462,27 +492,6 @@ namespace BooksonicControlPanel
             catch
             {
                 return false;
-            }
-        }
-
-        static private string javaVersionInstalled()
-        {
-            try
-            {
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = "java.exe";
-                psi.Arguments = " -version";
-                psi.RedirectStandardError = true;
-                psi.UseShellExecute = false;
-
-                Process pr = Process.Start(psi);
-                string strOutput = pr.StandardError.ReadLine().Split(' ')[2].Replace("\"", "");
-
-                return strOutput;
-            }
-            catch (Exception ex)
-            {
-                return "error";
             }
         }
 
