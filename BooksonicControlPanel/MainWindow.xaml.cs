@@ -23,15 +23,19 @@ namespace BooksonicControlPanel
         private System.Windows.Forms.NotifyIcon notifyIcon;
         private WindowState m_storedWindowState = WindowState.Normal;
         private String exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+        private String nssmPath, warPath, versionPath;
 
         private String portNum = "4040";
         private String installLocation = @"C:\booksonic";
-        private String nssmPath = "";
 
         public MainWindow()
         {
             InitializeComponent();
+
             nssmPath = installLocation + @"\booksonic-nssm.exe";
+            warPath = installLocation + @"\booksonic.war";
+            versionPath = installLocation + @"\version";
+
             if (IsAdministrator() == false)
             {
                 System.Windows.Forms.MessageBox.Show("The control panel needs to run as administrator so it can handle the Booksonic service. \n\nPlease rightlick on the exe and then run as administrator", "Admin rights needed", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
@@ -402,20 +406,36 @@ namespace BooksonicControlPanel
             // Remove the scheduled task created by the old installation script
             RemoveScheduledTask("Booksonic start on boot");
 
-
-            ProcessStartInfo processInfo = new ProcessStartInfo(installLocation + @"\booksonic-nssm.exe");
-            processInfo.Arguments = $"install Booksonic \"java\" \"-Dairsonic.home=" + installLocation + " -Dserver.port=" + portNum + " -jar " + installLocation + "\\booksonic.war\"";
-            processInfo.RedirectStandardOutput = true;
-            processInfo.UseShellExecute = false;
-            processInfo.CreateNoWindow = true;
-            Process process = new Process();
-            process.StartInfo = processInfo;
-            process.Start();
-
-            // Wait for the NSSM process to finish
-            process.WaitForExit();
+            // Install the process using nssm
+            startHiddenProcess(nssmPath, $"install Booksonic \"java\" \"-Dairsonic.home=" + installLocation + " -Dserver.port=" + portNum + " -jar " + warPath + "\"");
 
         }
+
+        public void removeService()
+        {
+
+            // Install the process using nssm
+            startHiddenProcess(nssmPath, $"remove Booksonic confirm");
+
+        }
+
+        public void startHiddenProcess(String filePath, String arguments)
+        {
+
+            Process process = new Process();
+            process.StartInfo = new ProcessStartInfo(filePath)
+            {
+                Arguments = arguments,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+
+            };
+            process.Start();
+            process.WaitForExit();
+        }
+
         public bool RemoveScheduledTask(string taskName)
         {
             using (TaskService taskService = new TaskService())
@@ -448,19 +468,19 @@ namespace BooksonicControlPanel
         public void downloadBooksonic(string warUrl, string version)
         {
             Console.WriteLine("Downloading the latest version of the server");
-            if (File.Exists(installLocation + @"\version"))
+            if (File.Exists(versionPath))
             {
-                File.Delete(installLocation + @"\version");
+                File.Delete(versionPath);
             }
-            File.WriteAllText(installLocation + @"\version", version);
-            if (File.Exists(installLocation + @"\booksonic.war"))
+            File.WriteAllText(versionPath, version);
+            if (File.Exists(warPath))
             {
-                File.Delete(installLocation + @"\booksonic.war");
+                File.Delete(warPath);
             }
 
             WebClient webClient = new System.Net.WebClient();
             webClient.Headers.Add("user-agent", "BooksonicControlPanel");
-            webClient.DownloadFile(warUrl, installLocation + @"\booksonic.war");
+            webClient.DownloadFile(warUrl, warPath);
         }
 
         public bool processIsRunning(Process process)
@@ -479,11 +499,16 @@ namespace BooksonicControlPanel
         {
             try
             {
-                System.Diagnostics.Process process = new System.Diagnostics.Process();
-                process.StartInfo.FileName = @"java";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.RedirectStandardError = true;
+                Process process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "java",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true
+                    }
+                };
                 process.Start();
                 return true;
             }
