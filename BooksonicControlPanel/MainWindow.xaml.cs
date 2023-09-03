@@ -52,6 +52,10 @@ namespace BooksonicControlPanel
                 status.Content = "Running";
                 startBtn.IsEnabled = false;
                 stopBtn.IsEnabled = true;
+                openBtn.IsEnabled = true;
+                path.IsEnabled = false;
+                port.IsEnabled = false;
+
             }
 
 
@@ -315,6 +319,8 @@ namespace BooksonicControlPanel
                             {
                                 status.Content = "Starting service...";
                                 startBtn.IsEnabled = false;
+                                path.IsEnabled = false;
+                                port.IsEnabled = false;
                             });
                             Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new System.Action(() => { }));
 
@@ -333,6 +339,8 @@ namespace BooksonicControlPanel
                             {
                                 status.Content = "Starting service...";
                                 startBtn.IsEnabled = false;
+                                path.IsEnabled = false;
+                                port.IsEnabled = false;
                             });
                             Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new System.Action(() => { }));
 
@@ -344,6 +352,7 @@ namespace BooksonicControlPanel
                         }
 
                         stopBtn.IsEnabled = true;
+                        openBtn.IsEnabled = true;
                     }
                 }), DispatcherPriority.Background);
             }
@@ -355,6 +364,9 @@ namespace BooksonicControlPanel
                     status.Content = "Not Running";
                     startBtn.IsEnabled = true;
                     stopBtn.IsEnabled = false;
+                    openBtn.IsEnabled = false;
+                    path.IsEnabled = true;
+                    port.IsEnabled = true;
                 }), DispatcherPriority.ContextIdle);
             }
             else if (sender == devBtn)
@@ -364,7 +376,10 @@ namespace BooksonicControlPanel
                     installJava();
                 }), DispatcherPriority.ContextIdle);
             }
-
+            else if(sender == openBtn)
+            {
+                System.Diagnostics.Process.Start("http://localhost:" + portNum + "/ ");
+            }
         }
 
         public void startBooksonic()
@@ -599,6 +614,10 @@ namespace BooksonicControlPanel
             return isValid;
         }
 
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 
 }

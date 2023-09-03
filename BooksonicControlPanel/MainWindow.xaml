@@ -5,23 +5,47 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BooksonicControlPanel"
         mc:Ignorable="d"
-        Title="Booksonic Control Panel" Height="272.536" Width="318.311" ResizeMode="CanMinimize" Icon="booksonic.png" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged">
+        Title="Booksonic Control Panel" Height="302" Width="318.311" ResizeMode="CanMinimize" Icon="booksonic.png" StateChanged="OnStateChanged" IsVisibleChanged="OnIsVisibleChanged">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="101*"/>
-            <ColumnDefinition Width="211*"/>
-        </Grid.ColumnDefinitions>
-        <Label Content="Status:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Foreground="Black" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="81" FontSize="22"/>
-        <Label Content="Not running" HorizontalAlignment="Left" Name="status" Margin="96,10,0,0" VerticalAlignment="Top" Foreground="#FF196AAE" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="206" FontSize="22" Grid.ColumnSpan="2"/>
-        <Button Name="stopBtn" Content="Stop" HorizontalAlignment="Left" Margin="104.667,203,0,0" VerticalAlignment="Top" Width="75" Background="White" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click" IsEnabled="False" Grid.Column="1"/>
-        <Label Content="Port:" HorizontalAlignment="Left" Margin="28,102,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="port" HorizontalAlignment="Left" Height="23" Margin="67,106,0,0" TextWrapping="Wrap" Text="4040" VerticalAlignment="Top" Width="214" Grid.ColumnSpan="2"/>
-        <Label Content="Path:" HorizontalAlignment="Left" Margin="28,71,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="path" HorizontalAlignment="Left" Height="23" Margin="67,74,0,0" TextWrapping="Wrap" Text="C:\booksonic" VerticalAlignment="Top" Width="214" Grid.ColumnSpan="2"/>
-        <Button Name="startBtn" Content="Start" HorizontalAlignment="Left" Margin="24.667,203,0,0" VerticalAlignment="Top" Width="75" Background="White" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click" Grid.Column="1"/>
-        <Label Content="BETA" HorizontalAlignment="Left" x:Name="status_Copy" Margin="2,178,0,0" VerticalAlignment="Top" Foreground="#FFBF1919" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="68" FontSize="24" FontStyle="Italic"/>
-        <Label Content="v2010.b5" HorizontalAlignment="Left" x:Name="status_Copy1" Margin="2,209,0,0" VerticalAlignment="Top" Foreground="#FF858AB1" RenderTransformOrigin="0.899,0.726" Width="89" FontStyle="Italic"/>
-        <Button Name="devBtn" Visibility="Hidden" Grid.ColumnSpan="2" Content="Dev Button" HorizontalAlignment="Left" Click="Button_Click" Margin="64,151,0,0" VerticalAlignment="Top" Width="75"/>
+
+        <TabControl Grid.ColumnSpan="2">
+            <TabItem Header="Status">
+                <Grid Background="#FFF">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="103*"/>
+                        <RowDefinition Height="126*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="101*"/>
+                        <ColumnDefinition Width="211*"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Status:" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Foreground="Black" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="81" FontSize="22"/>
+                    <Label Content="Not running" HorizontalAlignment="Left" Name="status" Margin="96,10,0,0" VerticalAlignment="Top" Foreground="#FF196AAE" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="206" FontSize="22" Grid.ColumnSpan="2"/>
+                    <Button Name="stopBtn" Content="Stop" HorizontalAlignment="Left" Margin="105,100,0,0" VerticalAlignment="Top" Width="75" Background="White" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click" IsEnabled="False" Grid.Column="1" Grid.Row="1"/>
+                    <Label Content="Port:" HorizontalAlignment="Left" Margin="28,102,0,0" VerticalAlignment="Top" Grid.RowSpan="2"/>
+                    <TextBox Name="port" HorizontalAlignment="Left" Height="23" Margin="67,105,0,0" TextWrapping="Wrap" Text="4040" VerticalAlignment="Top" Width="214" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
+                    <Label Content="Path:" HorizontalAlignment="Left" Margin="28,71,0,0" VerticalAlignment="Top"/>
+                    <TextBox Name="path" HorizontalAlignment="Left" Height="23" Margin="67,74,0,0" TextWrapping="Wrap" Text="C:\booksonic" VerticalAlignment="Top" Width="214" Grid.ColumnSpan="2"/>
+                    <Button Name="startBtn" Content="Start" HorizontalAlignment="Left" Margin="25,100,0,0" VerticalAlignment="Top" Width="75" Background="White" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click" Grid.Column="1" Grid.Row="1"/>
+                    <Label Content="BETA" HorizontalAlignment="Left" x:Name="status_Copy" Margin="2,75,0,0" VerticalAlignment="Top" Foreground="#FFBF1919" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="68" FontSize="24" FontStyle="Italic" Grid.Row="1"/>
+                    <Label Content="v2309.b6" HorizontalAlignment="Left" x:Name="status_Copy1" Margin="2,106,0,0" VerticalAlignment="Top" Foreground="#FF858AB1" RenderTransformOrigin="0.899,0.726" Width="89" FontStyle="Italic" Grid.Row="1"/>
+                    <Button Name="devBtn" Visibility="Hidden" Grid.ColumnSpan="2" Content="Dev Button" HorizontalAlignment="Left" Click="Button_Click" Margin="64,48,0,0" VerticalAlignment="Top" Width="75" Grid.Row="1"/>
+                    <Button Name="openBtn" Content="Open" HorizontalAlignment="Left" Margin="25,75,0,0" VerticalAlignment="Top" Width="155" Background="White" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click" IsEnabled="False" Grid.Column="1" Grid.Row="1"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Updates">
+
+                <Grid Background="#FFF">
+                    <Label Content="Booksonic" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Foreground="Black" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="138" FontSize="22"/>
+                    <Label Content="Control Panel" HorizontalAlignment="Left" Margin="10,75,0,0" VerticalAlignment="Top" Foreground="Black" FontWeight="Bold" RenderTransformOrigin="0.899,0.726" Width="211" FontSize="22"/>
+                    <Label Content="Unknown" HorizontalAlignment="Left" Foreground="DarkGreen" Margin="19,44,0,0" VerticalAlignment="Top"/>
+                    <Label Content="Unknown" HorizontalAlignment="Left" Foreground="DarkGreen" Margin="19,119,0,0" VerticalAlignment="Top"/>
+                    <Button x:Name="ctrlPanelUpdateBtn" Content="Update" HorizontalAlignment="Left" Margin="134,122,0,0" VerticalAlignment="Top" Width="87" Background="White" IsEnabled="False" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click"/>
+                    <Button x:Name="booksonicUpdateBtn" Content="Update" HorizontalAlignment="Left" Margin="134,47,0,0" VerticalAlignment="Top" Width="87" Background="White" IsEnabled="False" BorderBrush="#FF0884DA" OpacityMask="Black" Click="Button_Click"/>
+                    <Label Content="This feature is not implemented yet" HorizontalAlignment="Left" Foreground="DarkRed" Margin="19,164,0,0" VerticalAlignment="Top"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 
 </Window>
