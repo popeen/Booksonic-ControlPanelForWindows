@@ -115,6 +115,7 @@ namespace BooksonicControlPanel
             else
                 return true;
         }
+        
         private bool isBooksonicRunning()
         {
             try
@@ -130,6 +131,7 @@ namespace BooksonicControlPanel
                 return false;
             }
         }
+
         private void startService()
         {
             ServiceController ctl = ServiceController.GetServices().FirstOrDefault(s => s.ServiceName == "Booksonic");
@@ -382,25 +384,6 @@ namespace BooksonicControlPanel
             }
         }
 
-        public void startBooksonic()
-        {
-            pProcess.StartInfo.FileName = @"java";
-            pProcess.StartInfo.Arguments = @"-Dairsonic.home=" + installLocation + @" -Dserver.port=" + portNum + " -jar booksonic.war";
-            pProcess.StartInfo.UseShellExecute = false;
-            pProcess.StartInfo.CreateNoWindow = true;
-            pProcess.StartInfo.WorkingDirectory = installLocation + @"\";
-            pProcess.Start();
-        }
-
-        public void stopBooksonic()
-        {
-            //TODO, this should be done more gracefully
-            if (processIsRunning(pProcess))
-            {
-                pProcess.Kill();
-            }
-        }
-
         public void downloadNSSM()
         {
             
@@ -614,10 +597,6 @@ namespace BooksonicControlPanel
             return isValid;
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 
 }
